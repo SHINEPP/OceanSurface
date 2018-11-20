@@ -5,6 +5,11 @@ import numpy as np
 from scipy.fftpack import fft
 
 
+def normalize(v):
+    length = math.sqrt(v[0] * v[0] + v[1] * v[1])
+    return [v[0] / length, v[1] / length]
+
+
 class OceanSurface:
     def __init__(self):
         self.__g = 9.8
@@ -14,7 +19,7 @@ class OceanSurface:
         self.__lambda = 1.0
 
         self.__V = 30  # 风速
-        self.__omega_hat = [1, 1]  # 风向
+        self.__omega_hat = normalize([1, 1])  # 风向
 
         # Mesh resolution
         self.__N = 64
@@ -58,16 +63,16 @@ class OceanSurface:
 
                 self.__value_h_twiddle[index] = self.__func_h_twiddle(n, m, time)
 
-                kVec = self.__k_vec(n, m)
-                kLength = math.sqrt(kVec[0] * kVec[0] + kVec[1] * kVec[1])
-                kVecNormalized = kVec
-                if kLength != 0:
-                    kVecNormalized = [kVec[0] / kLength, kVec[1] / kLength]
+                k_vec = self.__k_vec(n, m)
+                k_length = math.sqrt(k_vec[0] * k_vec[0] + k_vec[1] * k_vec[1])
+                k_vec_normalized = k_vec
+                if k_length != 0:
+                    k_vec_normalized = [k_vec[0] / k_length, k_vec[1] / k_length]
 
-                slope_x_term.append(complex(0.0, kVec[0]) * self.__value_h_twiddle[index])
-                slope_z_term.append(complex(0.0, kVec[1]) * self.__value_h_twiddle[index])
-                d_x_term.append(complex(0.0, -kVecNormalized[0]) * self.__value_h_twiddle[index])
-                d_z_term.append(complex(0.0, -kVecNormalized[1]) * self.__value_h_twiddle[index])
+                slope_x_term.append(complex(0.0, k_vec[0]) * self.__value_h_twiddle[index])
+                slope_z_term.append(complex(0.0, k_vec[1]) * self.__value_h_twiddle[index])
+                d_x_term.append(complex(0.0, -k_vec_normalized[0]) * self.__value_h_twiddle[index])
+                d_z_term.append(complex(0.0, -k_vec_normalized[1]) * self.__value_h_twiddle[index])
 
         out_height = fft(self.__value_h_twiddle)
         out_d_x = fft(d_x_term)
@@ -90,7 +95,7 @@ class OceanSurface:
     def __func_omega(self, k):
         return math.sqrt(self.__g * k)
 
-    def __func_P_h(self, vec_k):
+    def __func_p_h(self, vec_k):
         if vec_k[0] == 0.0 and vec_k[1] == 0.0:
             return 0.0
 
@@ -106,7 +111,7 @@ class OceanSurface:
 
     def __func_h_twiddle_0(self, vec_k):
         xi = np.random.standard_normal(2)
-        return math.sqrt(0.5) * complex(xi[0], xi[1]) * math.sqrt(self.__func_P_h(vec_k))
+        return math.sqrt(0.5) * complex(xi[0], xi[1]) * math.sqrt(self.__func_p_h(vec_k))
 
     def __func_h_twiddle(self, kn, km, t):
         index = km * self.__N + kn
